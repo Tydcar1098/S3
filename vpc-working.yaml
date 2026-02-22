@@ -1,0 +1,120 @@
+# Description: Initial VPC template creation with 3 public subnets, IGW, public route table, and routing
+# Revision: 1.0
+# Date: 02/22/2026
+
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "Creates a VPC with 3 public subnets across 3 AZs in us-west-2, with IGW, public routing, and outputs."
+
+Resources:
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.98.0.0/16
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      Tags:
+        - Key: Name
+          Value: VPC-98
+
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: VPC-98-igw
+
+  VPCGatewayAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref VPC
+      InternetGatewayId: !Ref InternetGateway
+
+  PublicRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: VPC-98-public-rt
+
+  DefaultRouteToInternet:
+    Type: AWS::EC2::Route
+    DependsOn: VPCGatewayAttachment
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+
+  PublicSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: 10.98.1.0/24
+      AvailabilityZone: !Select
+        - 0
+        - !GetAZs us-west-2
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: VPC-98-public-subnet-1
+
+  PublicSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: 10.98.2.0/24
+      AvailabilityZone: !Select
+        - 1
+        - !GetAZs us-west-2
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: VPC-98-public-subnet-2
+
+  PublicSubnet3:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: 10.98.3.0/24
+      AvailabilityZone: !Select
+        - 2
+        - !GetAZs us-west-2
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: VPC-98-public-subnet-3
+
+  PublicSubnet1RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnet1
+      RouteTableId: !Ref PublicRouteTable
+
+  PublicSubnet2RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnet2
+      RouteTableId: !Ref PublicRouteTable
+
+  PublicSubnet3RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnet3
+      RouteTableId: !Ref PublicRouteTable
+
+Outputs:
+  VpcId:
+    Description: "VPC ID"
+    Value: !Ref VPC
+
+  PublicSubnet1Id:
+    Description: "Public Subnet 1 ID"
+    Value: !Ref PublicSubnet1
+
+  PublicSubnet2Id:
+    Description: "Public Subnet 2 ID"
+    Value: !Ref PublicSubnet2
+
+  PublicSubnet3Id:
+    Description: "Public Subnet 3 ID"
+    Value: !Ref PublicSubnet3
